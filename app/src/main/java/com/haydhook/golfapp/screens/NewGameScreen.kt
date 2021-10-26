@@ -18,12 +18,19 @@ import androidx.compose.ui.unit.dp
 import com.haydhook.golfapp.ui.theme.clrError
 import com.haydhook.golfapp.ui.theme.clrSuccess
 import com.haydhook.golfapp.utils.ErrorDialog
+import com.haydhook.golfapp.utils.regexDigit
 import com.haydhook.golfapp.utils.showErrorDialog
 
 private val showPlayerInput = mutableStateOf(false)
 private var enabledEndGame = mutableStateOf(false)
 val mappedPlayerNames = hashMapOf<Int, String>()
+var errorTitle = "Error"
+var errorText = ""
 var pubHoleCount = 0
+
+val maxPlayerCount = 8
+val maxHoleCount = 16
+
 
 @Composable
 fun NewGameScreen() {
@@ -94,6 +101,20 @@ fun NewGameScreen() {
             OutlinedButton(onClick = {
                 if (playerCount == "" || holeCount == "") {
                     showErrorDialog.value = true
+                    errorText = "Please ensure all fields contain numbers."
+
+                }else if (playerCount.length != regexDigit.replace(playerCount, "").length || holeCount.length != regexDigit.replace(holeCount, "" ).length) {
+                    showErrorDialog.value = true
+                    errorText = "Please remove any none-digit characters from all fields."
+
+                } else if (playerCount.toInt() > maxPlayerCount) {
+                    showErrorDialog.value = true
+                    errorText = "Max players hit. Please choose up to $maxPlayerCount players"
+
+                } else if (holeCount.toInt() > maxHoleCount) {
+                    showErrorDialog.value = true
+                    errorText = "Max hole count hit. Please choose up to $maxHoleCount holes"
+
                 } else {
                     mappedPlayerNames.clear()
                     showPlayerInput.value = true
@@ -108,7 +129,7 @@ fun NewGameScreen() {
         }
 
     if (showErrorDialog.value) {
-        ErrorDialog(title = "Error", text = "Please ensure all fields contain numbers.")
+        ErrorDialog(title = errorTitle, text = errorText)
     }
 
     if (showPlayerInput.value) {
@@ -120,12 +141,11 @@ fun NewGameScreen() {
 @Composable
 fun InputPlayers(index : Int, holeCount : Int) {
     val scrollState = rememberScrollState()
+    Spacer(modifier = Modifier.padding(top = 8.dp))
 
-    Spacer(modifier = Modifier.height(8.dp))
-
-    MaterialTheme {
-        Column {
+        Column{
             AlertDialog(
+                modifier = Modifier.padding(top = 16.dp),
                 onDismissRequest = {
                     showPlayerInput.value = false
                 },
@@ -135,7 +155,6 @@ fun InputPlayers(index : Int, holeCount : Int) {
                 text = {
                     Column(
                         modifier = Modifier
-                            .fillMaxSize()
                             .wrapContentSize(Alignment.Center)
                             .verticalScroll(scrollState)
                     ) {
@@ -186,7 +205,6 @@ fun InputPlayers(index : Int, holeCount : Int) {
                 },
             )
         }
-    }
 }
 
 @Preview(showBackground = true)

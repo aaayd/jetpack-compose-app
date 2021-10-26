@@ -4,6 +4,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -18,22 +19,24 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-
+import com.haydhook.golfapp.utils.GolfTable
 
 
 @Composable
 fun CurrentGameScreen() {
-    val playerNameArray = mutableListOf<String>()
+    var gameText by remember { mutableStateOf("No Current Games") }
+    var playerNameArray = mutableListOf<String>()
     val holeCountArray = mutableListOf<String>()
 
-    for(i in 0 until mappedPlayerNames.values.count()) {
+    for (i in 0 until mappedPlayerNames.values.count()) {
         playerNameArray.add(mappedPlayerNames[i].toString())
     }
 
-    for(i in 0 until pubHoleCount) {
+    for (i in 0 until pubHoleCount + 1) {
         holeCountArray.add(i.toString())
     }
 
@@ -51,25 +54,21 @@ fun CurrentGameScreen() {
             fontSize = 25.sp
         )
 
-        if (mappedPlayerNames.isEmpty()) {
-
-            Text(
-                text = "No Current Games",
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.align(Alignment.CenterHorizontally),
-                textAlign = TextAlign.Center,
-                fontSize = 15.sp
-            )
+        gameText = if (mappedPlayerNames.isEmpty()) {
+            "No Current Games"
         } else {
-            Text(
-                text = "Game created with ${mappedPlayerNames.count()} players",
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.align(Alignment.CenterHorizontally),
-                textAlign = TextAlign.Center,
-                fontSize = 15.sp
-            )
-
+            playerNameArray = (mutableListOf("Hole") + playerNameArray) as MutableList<String>
+            "Game created with ${mappedPlayerNames.count()} players & ${holeCountArray.count()} holes"
         }
+
+        Text(
+            text = gameText,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.align(Alignment.CenterHorizontally),
+            textAlign = TextAlign.Center,
+            fontSize = 15.sp
+        )
+
 
         val cellWidth: (Int) -> Dp = { index ->
             when (index) {
@@ -92,13 +91,28 @@ fun CurrentGameScreen() {
         }
 
         val cellText: @Composable (Int, String) -> Unit = { index, item ->
-            var cellValue by remember { mutableStateOf("TEST VAL") }
-            println(item)
-            println(cellValue)
+            var cellValue by remember { mutableStateOf("") }
+            var enabled by remember { mutableStateOf(true) }
+            if (index == 0) {
+                cellValue = ((item.toInt()) + 1).toString()
+
+                if (item == holeCountArray.last().toString()) {
+                    cellValue = "Totals"
+                }
+                enabled = false
+
+            } else if (item == holeCountArray.last().toString() && index != 0) {
+                cellValue = "0"
+                enabled = false
+
+            }
+
             TextField(
                 value = cellValue,
                 onValueChange = { cellValue = it },
-                singleLine =  true,
+                singleLine = true,
+                enabled = enabled,
+
                 modifier = Modifier
                     .padding(16.dp)
                     .fillMaxWidth(),
@@ -116,12 +130,13 @@ fun CurrentGameScreen() {
                     backgroundColor = Color.White,
                     cursorColor = Color.Black,
                     focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent
+                    unfocusedIndicatorColor = Color.Transparent,
+                    disabledIndicatorColor = Color.Transparent
                 ),
             )
         }
 
-        Table(
+        GolfTable(
             columnCount = playerNameArray.count(),
             cellWidth = cellWidth,
             data = holeCountArray,
@@ -129,84 +144,6 @@ fun CurrentGameScreen() {
             headerCellContent = headerCellTitle,
             cellContent = cellText
         )
-    }
-}
-
-@Composable
-fun <T> Table(
-    columnCount: Int,
-    cellWidth: (index: Int) -> Dp,
-    data: List<T>,
-    modifier: Modifier = Modifier,
-    headerCellContent: @Composable (index: Int) -> Unit,
-    cellContent: @Composable (index: Int, item: T) -> Unit,
-) {
-    Surface(
-        modifier = modifier
-    ) {
-        LazyRow(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            itemsIndexed((0 until columnCount).toList()) { col_index, column ->
-                Column {
-                    (0..data.size).forEach { index ->
-                        Surface(
-                            border = BorderStroke(1.dp, Color.LightGray),
-                            contentColor = Color.Transparent,
-                            modifier = Modifier.width(cellWidth(col_index))
-                        ) {
-                            if (index == 0) {
-                                headerCellContent(col_index)
-                            } else {
-                                cellContent(col_index, data[index - 1])
-                                println("col_index : $col_index   data.size_index : $index")
-                            }
-                        }
-                    }
-                }
-            }
-
-            var mapColValues = hashMapOf<String, Int>()
-
-            itemsIndexed((0 until columnCount).toList()) { col_index, column ->
-                Column {
-                    (0..data.size).forEach { index ->
-                        Surface(
-                            border = BorderStroke(1.dp, Color.LightGray),
-                            contentColor = Color.Transparent,
-                            modifier = Modifier.width(cellWidth(col_index))
-                        ) {
-                            if (index == 0) {
-                                headerCellContent(col_index)
-                            } else {
-                                cellContent(col_index, data[index - 1])
-
-//                                if (!mapColValues.containsKey(col_index.toString())) {
-//
-//                                    mapColValues[col_index.toString()] = data[index - 1].toString().toInt()
-//
-//                                } else {
-//
-//                                    mapColValues[col_index.toString()] = mapColValues[col_index.toString()]!!.toInt() +  data[index - 1].toString().toInt()
-//
-//
-//                                }
-
-                                println(mapColValues)
-                                println(
-                                    "col_index : $col_index   data.size_index : $index cellContent : ${
-                                        cellContent(
-                                            col_index,
-                                            data[index - 1]
-                                        )
-                                    }"
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
     }
 }
 
