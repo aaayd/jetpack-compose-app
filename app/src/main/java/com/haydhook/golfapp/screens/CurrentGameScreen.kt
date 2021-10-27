@@ -1,14 +1,13 @@
 package com.haydhook.golfapp
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.*
+import androidx.compose.material.LocalTextStyle
+import androidx.compose.material.Text
+import androidx.compose.material.TextField
+import androidx.compose.material.TextFieldDefaults
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -19,15 +18,16 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.haydhook.golfapp.utils.GolfTable
+import com.haydhook.golfapp.utils.regexDigit
 
 
 @Composable
 fun CurrentGameScreen() {
+    val maxCharLength = 2
     var gameText by remember { mutableStateOf("No Current Games") }
     var playerNameArray = mutableListOf<String>()
     val holeCountArray = mutableListOf<String>()
@@ -72,7 +72,8 @@ fun CurrentGameScreen() {
 
         val cellWidth: (Int) -> Dp = { index ->
             when (index) {
-                else -> 150.dp
+                0 -> 75.dp
+                else -> 125.dp
             }
         }
 
@@ -90,6 +91,7 @@ fun CurrentGameScreen() {
             )
         }
 
+        var sumHashMap = hashMapOf<String, String>()
         val cellText: @Composable (Int, String) -> Unit = { index, item ->
             var cellValue by remember { mutableStateOf("") }
             var enabled by remember { mutableStateOf(true) }
@@ -97,24 +99,29 @@ fun CurrentGameScreen() {
                 cellValue = ((item.toInt()) + 1).toString()
 
                 if (item == holeCountArray.last().toString()) {
-                    cellValue = "Totals"
+                    cellValue = ""
+//                    cellValue = "Totals"
                 }
                 enabled = false
 
             } else if (item == holeCountArray.last().toString() && index != 0) {
-                cellValue = "0"
+                sumHashMap[index.toString()] = "0"
+                cellValue = sumHashMap[index.toString()].toString()
                 enabled = false
-
             }
 
             TextField(
                 value = cellValue,
-                onValueChange = { cellValue = it },
+                onValueChange = {
+                    cellValue = regexDigit.replace(it, "")
+                    if (it.length >= maxCharLength) {
+                        cellValue = regexDigit.replace(it.dropLast(it.length -  maxCharLength), "")
+                    }
+                                },
                 singleLine = true,
                 enabled = enabled,
-
                 modifier = Modifier
-                    .padding(16.dp)
+                    .padding(8.dp)
                     .fillMaxWidth(),
                 textStyle = LocalTextStyle.current.copy(
                     textAlign = TextAlign.Center,
@@ -135,7 +142,6 @@ fun CurrentGameScreen() {
                 ),
             )
         }
-
         GolfTable(
             columnCount = playerNameArray.count(),
             cellWidth = cellWidth,

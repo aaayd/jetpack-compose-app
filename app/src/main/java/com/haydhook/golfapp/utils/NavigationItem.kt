@@ -1,4 +1,4 @@
-package com.haydhook.golfapp
+package com.haydhook.golfapp.utils
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.ui.graphics.vector.ImageVector

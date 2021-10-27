@@ -6,7 +6,10 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
@@ -21,20 +24,94 @@ import com.haydhook.golfapp.utils.ErrorDialog
 import com.haydhook.golfapp.utils.regexDigit
 import com.haydhook.golfapp.utils.showErrorDialog
 
+private const val maxPlayerCount = 8
+private const val maxHoleCount = 16
+
 private val showPlayerInput = mutableStateOf(false)
 private var enabledEndGame = mutableStateOf(false)
+private var enabledCreateNewGame = mutableStateOf(false)
+
 val mappedPlayerNames = hashMapOf<Int, String>()
+val mappedText = hashMapOf<String, String>()
+
 var errorTitle = "Error"
 var errorText = ""
 var pubHoleCount = 0
 
-val maxPlayerCount = 8
-val maxHoleCount = 16
 
+
+fun validate(text : String): Array<String> {
+    var errorText = ""
+
+    if (regexDigit.replace(text, "").length != text.length) {
+        errorText = "Please remove all none-digit characters."
+
+    } else if (text == "") {
+        errorText = "Please ensure text is not empty."
+    }
+
+    if (errorText != "")
+        return arrayOf("true", errorText)
+    return arrayOf("", errorText)
+
+}
+
+@Composable 
+fun ValidatedTextField(text : String, label : String, varName : String) {
+    var _text  by remember { mutableStateOf(text) }
+    var _errorText  by remember { mutableStateOf("") }
+    var isError by rememberSaveable { mutableStateOf(false) }
+    val focusManager = LocalFocusManager.current
+
+
+    Column {
+        OutlinedTextField(
+            value = _text,
+            onValueChange = {
+                var validation = validate(it)
+                isError = validation[0].toBoolean()
+                enabledCreateNewGame.value = !validation[0].toBoolean()
+
+                _errorText = validation[1]
+                _text = it
+
+                mappedText[varName] = _text
+                println("holeCountDict : ${mappedText}")
+            },
+            keyboardOptions = KeyboardOptions.Default.copy(
+                capitalization = KeyboardCapitalization.Sentences,
+                autoCorrect = true,
+                keyboardType = KeyboardType.Number,
+                imeAction = ImeAction.Done
+            ),
+            keyboardActions = KeyboardActions(onDone = {
+                focusManager.clearFocus()
+            }),
+            trailingIcon = {
+                if (isError)
+                    Icon(
+                        Icons.Filled.Warning,
+                        "error",
+                        tint = MaterialTheme.colors.error)
+            },
+            isError = isError,
+            singleLine = true,
+            label = { Text(label) }
+        )
+
+        if (isError) {
+            Text(
+                text = _errorText,
+                color = MaterialTheme.colors.error,
+                style = MaterialTheme.typography.caption,
+                modifier = Modifier.padding(start = 8.dp)
+            )
+        }
+    }
+}
 
 @Composable
 fun NewGameScreen() {
-    val focusManager = LocalFocusManager.current
     var playerCount  by remember { mutableStateOf("") }
     var holeCount by remember { mutableStateOf("") }
 
@@ -48,36 +125,16 @@ fun NewGameScreen() {
             .wrapContentSize(Alignment.Center)
     ) {
 
-        OutlinedTextField(
-            value = playerCount,
-            onValueChange = { playerCount = it },
-            keyboardOptions = KeyboardOptions.Default.copy(
-                capitalization = KeyboardCapitalization.Sentences,
-                autoCorrect = true,
-                keyboardType = KeyboardType.Number,
-                imeAction = ImeAction.Done
-            ),
-            keyboardActions = KeyboardActions(onDone = {
-                focusManager.clearFocus()
-            }),
-            singleLine = true,
-            label = { Text("Player Count") }
+        ValidatedTextField(
+            text = playerCount,
+            label = "Player Count",
+            varName = "playerCount"
         )
 
-        OutlinedTextField(
-            value = holeCount,
-            onValueChange = { holeCount = it },
-            keyboardOptions = KeyboardOptions.Default.copy(
-                capitalization = KeyboardCapitalization.Sentences,
-                autoCorrect = true,
-                keyboardType = KeyboardType.Number,
-                imeAction = ImeAction.Done
-            ),
-            keyboardActions = KeyboardActions(onDone = {
-                focusManager.clearFocus()
-            }),
-            singleLine = true,
-            label = { Text("Hole Count") }
+        ValidatedTextField(
+            text = holeCount,
+            label = "Hole Count" ,
+            varName = "holeCount"
         )
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -98,14 +155,16 @@ fun NewGameScreen() {
             Spacer(modifier = Modifier.width(8.dp))
 
 
-            OutlinedButton(onClick = {
+            OutlinedButton(
+
+                enabled = enabledCreateNewGame.value,
+                onClick = {
+                    playerCount = mappedText["playerCount"].toString()
+                    holeCount = mappedText["holeCount"].toString()
+
                 if (playerCount == "" || holeCount == "") {
                     showErrorDialog.value = true
                     errorText = "Please ensure all fields contain numbers."
-
-                }else if (playerCount.length != regexDigit.replace(playerCount, "").length || holeCount.length != regexDigit.replace(holeCount, "" ).length) {
-                    showErrorDialog.value = true
-                    errorText = "Please remove any none-digit characters from all fields."
 
                 } else if (playerCount.toInt() > maxPlayerCount) {
                     showErrorDialog.value = true
@@ -177,6 +236,7 @@ fun InputPlayers(index : Int, holeCount : Int) {
                     Button(
                         colors= ButtonDefaults.buttonColors(backgroundColor = clrError),
                         onClick = {
+                            mappedPlayerNames.clear()
                             showPlayerInput.value = false
                         }) {
                         Text("Cancel")
