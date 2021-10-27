@@ -162,11 +162,7 @@ fun NewGameScreen() {
                     playerCount = mappedText["playerCount"].toString()
                     holeCount = mappedText["holeCount"].toString()
 
-                if (playerCount == "" || holeCount == "") {
-                    showErrorDialog.value = true
-                    errorText = "Please ensure all fields contain numbers."
-
-                } else if (playerCount.toInt() > maxPlayerCount) {
+                    if (playerCount.toInt() > maxPlayerCount) {
                     showErrorDialog.value = true
                     errorText = "Max players hit. Please choose up to $maxPlayerCount players"
 

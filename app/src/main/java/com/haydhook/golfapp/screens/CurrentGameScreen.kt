@@ -31,6 +31,7 @@ fun CurrentGameScreen() {
     var gameText by remember { mutableStateOf("No Current Games") }
     var playerNameArray = mutableListOf<String>()
     val holeCountArray = mutableListOf<String>()
+    var sumHashMap = hashMapOf<String, String>()
 
     for (i in 0 until mappedPlayerNames.values.count()) {
         playerNameArray.add(mappedPlayerNames[i].toString())
@@ -91,11 +92,10 @@ fun CurrentGameScreen() {
             )
         }
 
-        var sumHashMap = hashMapOf<String, String>()
-        val cellText: @Composable (Int, String) -> Unit = { index, item ->
+        val cellText: @Composable (Int, String) -> Unit = { column_index, item ->
             var cellValue by remember { mutableStateOf("") }
             var enabled by remember { mutableStateOf(true) }
-            if (index == 0) {
+            if (column_index == 0) {
                 cellValue = ((item.toInt()) + 1).toString()
 
                 if (item == holeCountArray.last().toString()) {
@@ -104,11 +104,12 @@ fun CurrentGameScreen() {
                 }
                 enabled = false
 
-            } else if (item == holeCountArray.last().toString() && index != 0) {
-                sumHashMap[index.toString()] = "0"
-                cellValue = sumHashMap[index.toString()].toString()
+            } else if (item == holeCountArray.last().toString() && column_index != 0) {
+                sumHashMap[column_index.toString()] = column_index.toString()
+                cellValue = sumHashMap[column_index.toString()].toString()
                 enabled = false
             }
+            sumHashMap[column_index.toString()] = column_index.toString()
 
             TextField(
                 value = cellValue,
@@ -117,6 +118,11 @@ fun CurrentGameScreen() {
                     if (it.length >= maxCharLength) {
                         cellValue = regexDigit.replace(it.dropLast(it.length -  maxCharLength), "")
                     }
+                    sumHashMap[column_index.toString()] = ((sumHashMap[column_index.toString()]!!.toInt()) + cellValue.toInt()).toString()
+                    cellValue = sumHashMap[column_index.toString()].toString()
+                    cellValue = it
+
+                    println("sumHashMap : $sumHashMap    cellValue : $cellValue    it : $it")
                                 },
                 singleLine = true,
                 enabled = enabled,
@@ -142,6 +148,7 @@ fun CurrentGameScreen() {
                 ),
             )
         }
+
         GolfTable(
             columnCount = playerNameArray.count(),
             cellWidth = cellWidth,
